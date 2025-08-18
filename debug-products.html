@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Debug Products API</title>
+  </head>
+  <body>
+    <h1>Products API Debug</h1>
+    <button onclick="fetchProducts()">Fetch Products</button>
+    <pre id="output"></pre>
+
+    <script>
+      async function fetchProducts() {
+        try {
+          const response = await fetch("http://localhost:8000/products/all");
+          const data = await response.json();
+
+          document.getElementById("output").textContent = JSON.stringify(
+            data,
+            null,
+            2
+          );
+
+          // Check first product's image
+          if (
+            data.length > 0 &&
+            data[0].image_url &&
+            data[0].image_url.length > 0
+          ) {
+            console.log("First image URL:", data[0].image_url[0]);
+            console.log("Image URL length:", data[0].image_url[0].length);
+            console.log("Is base64?", data[0].image_url[0].startsWith("data:"));
+          }
+        } catch (error) {
+          document.getElementById("output").textContent =
+            "Error: " + error.message;
+        }
+      }
+    </script>
+  </body>
+</html>

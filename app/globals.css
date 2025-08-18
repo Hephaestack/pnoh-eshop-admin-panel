@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Dark Gothic Silver Theme */
+  --background: #0f0f0f;
+  --background-secondary: #1a1a1a;
+  --background-tertiary: #262626;
+  --foreground: #e5e5e5;
+  --foreground-secondary: #b8b8b8;
+  --foreground-muted: #7a7a7a;
+  --silver: #c0c0c0;
+  --silver-dark: #8a8a8a;
+  --silver-light: #e8e8e8;
+  --accent: #4a4a4a;
+  --accent-hover: #5a5a5a;
+  --border: #2a2a2a;
+  --border-hover: #3a3a3a;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --glass: rgba(42, 42, 42, 0.8);
+  --shadow: rgba(0, 0, 0, 0.5);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Selection */
+::selection {
+  background: var(--silver);
+  color: var(--background);
+}
+
+/* Glass morphism utility */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+/* Gothic accents */
+.gothic-border {
+  border-image: linear-gradient(
+      45deg,
+      var(--silver-dark),
+      var(--silver),
+      var(--silver-dark)
+    )
+    1;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hide native browser scrollbars on small screens (mobile) */
+@media (max-width: 640px) {
+  html,
+  body,
+  #__next,
+  main {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Chrome, Safari and Opera */
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
