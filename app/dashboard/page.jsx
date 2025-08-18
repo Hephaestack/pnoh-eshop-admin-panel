@@ -240,43 +240,20 @@ function Sidebar({ isOpen, onClose, activeItem, setActiveItem }) {
 
 function TopBar({ onMenuClick }) {
   return (
-    <header className="glass border-b border-[var(--border)] px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-md hover:bg-[var(--accent)] text-[var(--foreground-secondary)]"
-          >
-            <Icons.Menu />
-          </button>
-          <h1 className="text-xl font-semibold text-[var(--silver-light)]">
-            Ταμπλό
-          </h1>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          {/* Search */}
-          <div className="hidden md:block">
-            <input
-              type="text"
-              placeholder="Αναζήτηση..."
-              className="w-64 px-4 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:outline-none focus:border-[var(--silver)] focus:ring-1 focus:ring-[var(--silver)]"
-            />
-          </div>
-
-          {/* Notifications */}
-          <button className="relative p-2 rounded-md hover:bg-[var(--accent)] text-[var(--foreground-secondary)]">
-            <Icons.Bell />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[var(--error)] rounded-full"></span>
-          </button>
-
-          {/* Profile */}
-          <div className="w-8 h-8 bg-gradient-to-br from-[var(--silver)] to-[var(--silver-dark)] rounded-full flex items-center justify-center cursor-pointer">
-            <span className="text-[var(--background)] font-semibold text-sm">
-              A
-            </span>
-          </div>
-        </div>
+    <header className="glass border-b border-[var(--border)] px-6 py-4 relative">
+      {/* Mobile menu button absolutely positioned on the left */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 rounded-md hover:bg-[var(--accent)] text-[var(--foreground-secondary)] absolute left-6 top-1/2 -translate-y-1/2"
+        aria-label="Open menu"
+      >
+        <Icons.Menu />
+      </button>
+      {/* Centered title */}
+      <div className="flex justify-center">
+        <h1 className="text-xl font-semibold text-[var(--silver-light)] text-center w-full">
+          Ταμπλό
+        </h1>
       </div>
     </header>
   );
