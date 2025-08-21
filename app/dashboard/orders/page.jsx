@@ -17,7 +17,8 @@ const dummyOrders = [
       { name: "Προϊόν Α", qty: 2, price: 30 },
       { name: "Προϊόν Β", qty: 1, price: 60.5 },
     ],
-    address: "Αθήνα, Ελλάδα",
+  address: "Αθήνα, Ελλάδα",
+  shippingAddress: "Λεωφ. Κηφισίας 10, Αθήνα, 11526",
     phone: "6901234567",
     email: "giannis@example.com",
     notes: "Παράδοση μετά τις 18:00",
@@ -39,7 +40,8 @@ const dummyOrders = [
     items: [
       { name: "Προϊόν Γ", qty: 3, price: 25 },
     ],
-    address: "Θεσσαλονίκη, Ελλάδα",
+  address: "Θεσσαλονίκη, Ελλάδα",
+  shippingAddress: "Εγνατία 50, Θεσσαλονίκη, 54625",
     phone: "6987654321",
     email: "maria@example.com",
     notes: "",
@@ -157,7 +159,7 @@ export default function OrdersPage() {
   const paymentBadge = (payment) => {
     const base = "flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full justify-center text-center";
     if (payment === "Πληρωμένο")
-      return <span className={`${base} text-green-700 border border-green-200 bg-green-50`}><FaCreditCard className="inline" /> Πληρωμένο</span>;
+      return <span className="font-semibold text-green-400">Πληρωμένο</span>;
     if (payment === "Απλήρωτο")
       return <span className={`${base} text-yellow-700 border border-yellow-200 bg-yellow-50`}><FaCreditCard className="inline" /> Απλήρωτο</span>;
     if (payment === "Επιστροφή")
@@ -237,9 +239,6 @@ export default function OrdersPage() {
             <option value="today">Σήμερα</option>
             <option value="week">Αυτή την εβδομάδα</option>
           </select>
-          <button className="flex items-center gap-1 px-3 py-2 rounded border border-[var(--accent)] text-white text-sm font-medium bg-[var(--accent)] hover:bg-[var(--accent-dark)] transition">
-            <FaDownload /> Εξαγωγή CSV
-          </button>
         </div>
         {/* Quick Stats */}
         <div className="flex gap-4 text-xs md:text-sm">
@@ -254,7 +253,6 @@ export default function OrdersPage() {
         <div className="flex items-center gap-2 mb-2 p-3 bg-[var(--background-muted)] rounded shadow animate-fade-in">
           <span className="font-medium text-white">Επιλεγμένα: {selectedIds.length}</span>
           <button onClick={handleBulkDelete} className="px-3 py-1 font-medium text-white transition bg-red-600 rounded hover:bg-red-700" aria-label="Διαγραφή επιλεγμένων"><FaTimesCircle className="inline mr-1" /> Διαγραφή</button>
-          <button onClick={handleBulkExport} className="px-3 py-1 rounded bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-dark)] transition" aria-label="Εξαγωγή CSV"><FaFileExport className="inline mr-1" /> Εξαγωγή</button>
           <div className="relative">
             <button onClick={() => setShowStatusDropdown(s => !s)} className="px-3 py-1 font-medium text-white transition bg-yellow-600 rounded hover:bg-yellow-700" aria-label="Αλλαγή κατάστασης"><FaHourglassHalf className="inline mr-1" /> Αλλαγή Κατάστασης</button>
             {showStatusDropdown && (
@@ -314,9 +312,6 @@ export default function OrdersPage() {
                   >
                     <FaEye /> Προβολή
                   </button>
-                  <button className="flex items-center gap-1 px-3 py-1 font-medium text-gray-700 transition bg-white border border-gray-400 rounded shadow-sm outline-none focus:ring-2 focus:ring-gray-400 hover:bg-gray-100" aria-label="Λήψη τιμολογίου">
-                    <FaFileExport /> Τιμολόγιο
-                  </button>
                 </td>
               </tr>
             ))}
@@ -326,51 +321,91 @@ export default function OrdersPage() {
 
       {/* Order Details Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-[var(--background)] rounded-lg shadow-lg p-8 w-full max-w-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative border border-[var(--border)]">
             <button
-              className="absolute top-4 right-4 text-[var(--accent)] hover:text-[var(--accent-dark)] text-2xl"
+              className="absolute top-4 right-4 text-[var(--accent)] hover:scale-110 hover:text-green-400 transition text-2xl"
               onClick={() => setSelectedOrder(null)}
               aria-label="Κλείσιμο λεπτομερειών"
             >
               &times;
             </button>
-            <h2 className="text-xl font-bold mb-4 text-[var(--silver-light)]">Λεπτομέρειες Παραγγελίας</h2>
-            <div className="grid grid-cols-1 mb-4 md:grid-cols-2 gap-x-8 gap-y-2">
-              <div><span className="font-semibold">ID:</span> {selectedOrder.id}</div>
-              <div><span className="font-semibold">Ημερομηνία:</span> {selectedOrder.date}</div>
-              <div><span className="font-semibold">Πελάτης:</span> {selectedOrder.customer}</div>
-              <div><span className="font-semibold">Email:</span> {selectedOrder.email}</div>
-              <div><span className="font-semibold">Τηλέφωνο:</span> {selectedOrder.phone}</div>
-              <div><span className="font-semibold">Κατάσταση:</span> {statusBadge(selectedOrder.status)}</div>
-              <div><span className="font-semibold">Πληρωμή:</span> {paymentBadge(selectedOrder.payment)}</div>
-              <div><span className="font-semibold">Σύνολο:</span> €{selectedOrder.total.toFixed(2)}</div>
-              <div><span className="font-semibold">Διεύθυνση:</span> {selectedOrder.address}</div>
-              <div><span className="font-semibold">Τρόπος Αποστολής:</span> {selectedOrder.shipping}</div>
-              <div className="md:col-span-2"><span className="font-semibold">Σημειώσεις:</span> {selectedOrder.notes || "-"}</div>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3 text-lg font-extrabold tracking-wider text-white uppercase">
+                Πληροφορίες Παραγγελίας
+                <span className="ml-2">{statusBadge(selectedOrder.status)}</span>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-xs text-[var(--silver)] font-medium">ID: <span className="font-mono text-white">{selectedOrder.id}</span></span>
+                <span className="text-xs text-[var(--silver)] font-medium">Ημερομηνία: <span className="font-mono text-white">{selectedOrder.date}</span></span>
+              </div>
             </div>
-            <div className="mb-4">
-              <span className="font-semibold">Προϊόντα:</span>
-              <ul className="mt-1 ml-6 list-disc">
-                {selectedOrder.items.map((item, idx) => (
-                  <li key={idx}>
-                    {item.name} x{item.qty} &ndash; €{item.price.toFixed(2)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* Timeline as vertical stepper */}
-            <div className="mb-2">
-              <span className="font-semibold">Χρονολόγιο:</span>
-              <div className="mt-2 ml-4 border-l-2 border-[var(--accent)] pl-4">
-                {selectedOrder.timeline?.map((step, idx, arr) => (
-                  <div key={idx} className="relative flex items-start mb-2">
-                    <span className={`w-3 h-3 rounded-full ${idx === arr.length-1 ? 'bg-green-400' : 'bg-[var(--accent)]'} border-2 border-white absolute -left-5 top-1`}></span>
-                    <div>
-                      <span className="font-semibold">{step.label}</span> <span className="text-[var(--silver)] text-xs">{step.date}</span>
-                    </div>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+              {/* Left: Customer & Order Info */}
+              <div>
+                <div className="mb-8">
+                  <div className="font-bold text-[var(--silver-light)] text-sm uppercase mb-2 tracking-wider border-b border-[var(--border)] pb-1">Πληροφορίες Πελάτη</div>
+                  <div className="space-y-1">
+                    <div><span className="text-[var(--silver)] font-medium">Όνομα: </span><span className="font-semibold text-white">{selectedOrder.customer}</span></div>
+                    <div><span className="text-[var(--silver)] font-medium">Τηλέφωνο: </span><span className="text-white">{selectedOrder.phone}</span></div>
+                    <div><span className="text-[var(--silver)] font-medium">Email: </span><span className="text-white">{selectedOrder.email}</span></div>
+                    <div><span className="text-[var(--silver)] font-medium">Διεύθυνση Παραλαβής: </span><span className="text-white">{selectedOrder.address}</span></div>
+                    <div><span className="text-[var(--silver)] font-medium">Διεύθυνση Αποστολής: </span><span className="text-white">{selectedOrder.shippingAddress || '-'}</span></div>
+                    {selectedOrder.notes && <div><span className="text-[var(--silver)] font-medium">Σημειώσεις: </span><span className="text-white">{selectedOrder.notes}</span></div>}
                   </div>
-                ))}
+                </div>
+                <div className="mb-8">
+                  <div className="font-bold text-[var(--silver-light)] text-sm uppercase mb-2 tracking-wider border-b border-[var(--border)] pb-1">Προϊόντα</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-[var(--silver)] border-b border-[var(--border)]">
+                          <th className="pb-1 font-medium text-left">Προϊόν</th>
+                          <th className="pb-1 font-medium text-center">Ποσότητα</th>
+                          <th className="pb-1 font-medium text-right">Τιμή</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.items.map((item, idx) => (
+                          <tr key={idx} className="border-b border-[var(--border)] last:border-b-0">
+                            <td className="py-1 text-white">{item.name}</td>
+                            <td className="py-1 text-center text-white">x{item.qty}</td>
+                            <td className="py-1 font-mono text-right text-white">€{item.price.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              {/* Right: Payment, Status, Total, Shipping, Timeline */}
+              <div>
+                <div className="mb-8">
+                  <div className="font-bold text-[var(--silver-light)] text-sm uppercase mb-2 tracking-wider border-b border-[var(--border)] pb-1">Στοιχεία Πληρωμής</div>
+                  <div className="space-y-2">
+                    <div><span className="text-[var(--silver)] font-medium">Πληρωμή: </span>{paymentBadge(selectedOrder.payment)}</div>
+                    <div><span className="text-[var(--silver)] font-medium">Σύνολο: </span><span className="font-mono text-lg text-white">€{selectedOrder.total.toFixed(2)}</span></div>
+                    <div><span className="text-[var(--silver)] font-medium">Τρόπος Αποστολής: </span><span className="text-white">{selectedOrder.shipping}</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="font-bold text-[var(--silver-light)] text-sm uppercase mb-2 tracking-wider border-b border-[var(--border)] pb-1">Χρονολόγιο</div>
+                  <div className="relative flex flex-col gap-4 mt-3 ml-2">
+                    {selectedOrder.timeline?.map((step, idx, arr) => {
+                      const isDone = idx < arr.length - 1 || selectedOrder.status === "Ολοκληρώθηκε";
+                      return (
+                        <div key={idx} className="flex items-center gap-3 animate-fade-in" style={{animationDelay: `${idx * 80}ms`}}>
+                          <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${isDone ? 'bg-green-500 border-green-500 text-white' : 'bg-[#222] border-[var(--border)] text-[var(--silver)]'} transition-all`}>{isDone ? <FaCheckCircle /> : <FaHourglassHalf />}</span>
+                          <div>
+                            <span className={`font-semibold ${isDone ? 'text-white' : 'text-[var(--silver)]'}`}>{step.label}</span>
+                            <span className="block text-xs text-[var(--silver)] font-mono">{step.date}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

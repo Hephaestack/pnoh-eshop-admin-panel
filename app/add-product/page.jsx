@@ -173,25 +173,29 @@ export default function AddProductPage() {
     async function submit() {
       setLoading(true);
       try {
-        let imageUrls = [];
-        if (imageFile) {
-          imageUrls = [await fileToDataUrl(imageFile)];
-        }
-
         const payload = {
           name,
           price: parseFloat(price),
           description: description || null,
           category: category || null,
           sub_category: subcategory || null,
-          image_url: imageUrls.length ? imageUrls : null,
         };
+
+        // Prepare FormData for backend
+        const formData = new FormData();
+        formData.append("payload", JSON.stringify(payload));
+        if (imageFile) {
+          formData.append("image", imageFile);
+        }
+
+        // Debug log for payload and image
+        console.log("Submitting product payload (FormData):", payload);
+        console.log("Image file:", imageFile);
 
         const res = await fetch(`${API_BASE}${PATHS.ADMIN_PRODUCTS}`, {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
         });
 
         if (res.status === 200 || res.status === 201) {
