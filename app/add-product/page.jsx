@@ -18,8 +18,8 @@ export default function AddProductPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]); // multiple files
+  const [imagePreviews, setImagePreviews] = useState([]); // multiple previews
   const [errors, setErrors] = useState({});
   // refs for enter-to-next behavior
   const fileInputRef = useRef(null);
@@ -43,15 +43,14 @@ export default function AddProductPage() {
   }
 
   useEffect(() => {
-    if (!imageFile) {
-      setImagePreview(null);
+    if (!imageFiles.length) {
+      setImagePreviews([]);
       return;
     }
-
-    const url = URL.createObjectURL(imageFile);
-    setImagePreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
+    const urls = imageFiles.map((file) => URL.createObjectURL(file));
+    setImagePreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [imageFiles]);
 
   useEffect(() => {
     // reset subcategory when category changes
@@ -93,7 +92,7 @@ export default function AddProductPage() {
     if (!subcategory) e.subcategory = "Επιλέξτε υποκατηγορία";
     if (!description || !description.trim())
       e.description = "Απαιτείται περιγραφή";
-    if (!imageFile) e.image = "Πρέπει να επιλέξετε εικόνα";
+    if (!imageFiles.length) e.image = "Πρέπει να επιλέξετε τουλάχιστον μία εικόνα";
     return e;
   }
 
@@ -110,7 +109,7 @@ export default function AddProductPage() {
       e.subcategory = "Επιλέξτε υποκατηγορία";
     if (field === "description" && (!description || !description.trim()))
       e.description = "Απαιτείται περιγραφή";
-    if (field === "image" && !imageFile) e.image = "Πρέπει να επιλέξετε εικόνα";
+    if (field === "image" && !imageFiles.length) e.image = "Πρέπει να επιλέξετε τουλάχιστον μία εικόνα";
 
     setErrors((prev) => {
       const next = { ...prev };
@@ -127,6 +126,17 @@ export default function AddProductPage() {
     });
 
     return Object.keys(e).length === 0;
+  }
+  function handleImageChange(e) {
+    const files = Array.from(e.target.files || []);
+    // Append new files to existing ones, avoiding duplicates by name and size
+    setImageFiles((prev) => {
+      const existing = prev.map(f => f.name + f.size);
+      const newFiles = files.filter(f => !existing.includes(f.name + f.size));
+      return [...prev, ...newFiles];
+    });
+    // Reset input value so the same file can be selected again if needed
+    if (e.target) e.target.value = null;
   }
 
   function focusNext(current) {
@@ -184,13 +194,12 @@ export default function AddProductPage() {
         // Prepare FormData for backend
         const formData = new FormData();
         formData.append("payload", JSON.stringify(payload));
-        if (imageFile) {
-          formData.append("image", imageFile);
-        }
+        imageFiles.forEach((file) => {
+          formData.append("images", file); // backend should accept images as a list
+        });
 
-        // Debug log for payload and image
-        console.log("Submitting product payload (FormData):", payload);
-        console.log("Image file:", imageFile);
+
+  // ...existing code...
 
         const res = await fetch(`${API_BASE}${PATHS.ADMIN_PRODUCTS}`, {
           method: "POST",
@@ -211,8 +220,8 @@ export default function AddProductPage() {
           setDescription("");
           setCategory("");
           setSubcategory("");
-          setImageFile(null);
-          setImagePreview(null);
+          setImageFiles([]);
+          setImagePreviews([]);
         } else if (res.status === 401) {
           setModalType("error");
           setModalTitle("Μη εξουσιοδοτημένο");
@@ -220,14 +229,14 @@ export default function AddProductPage() {
           setModalOpen(true);
         } else {
           const err = await res.text();
-          console.error("Create product failed:", err);
+          // ...existing code...
           setModalType("error");
           setModalTitle("Σφάλμα εξυπηρετητή");
           setModalMessage(`Server error: ${res.status}`);
           setModalOpen(true);
         }
       } catch (err) {
-        console.error(err);
+  // ...existing code...
         setModalType("error");
         setModalTitle("Σφάλμα δικτύου");
         setModalMessage(
@@ -274,32 +283,48 @@ export default function AddProductPage() {
               onSubmit={handleSubmit}
               className="glass p-6 sm:p-8 md:p-12 rounded-3xl border border-[var(--border)] shadow-2xl"
             >
-              {/* Image placeholder - clickable and scales with image */}
+              {/* Image placeholder - multiple images, preview, remove */}
               <div className="flex flex-col items-center mb-6">
                 <label className="w-full max-w-3xl cursor-pointer">
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     ref={fileInputRef}
-                    onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+                    onChange={handleImageChange}
                     onKeyDown={(e) => handleEnterKey(e, "image")}
                     className="hidden"
                   />
 
-                  <div className="w-full rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--background-secondary)] p-6 flex items-center justify-center">
-                    {imagePreview ? (
-                      <img
-                        src={imagePreview}
-                        alt="preview"
-                        className="max-w-full max-h-[60vh] object-contain rounded-lg"
-                      />
+                  <div className="w-full rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--background-secondary)] p-6 flex items-center justify-center flex-wrap gap-4">
+                    {imagePreviews.length ? (
+                      imagePreviews.map((src, idx) => (
+                        <div key={idx} className="relative group">
+                          <img
+                            src={src}
+                            alt={`preview-${idx}`}
+                            className="max-w-[180px] max-h-[180px] object-contain rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setImageFiles((files) => files.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute top-1 right-1 bg-[var(--error)] text-white rounded-full p-1 text-xs opacity-80 group-hover:opacity-100"
+                            title="Αφαίρεση"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
                     ) : (
                       <div className="text-[var(--foreground-muted)] text-center">
                         <p className="mb-1 text-lg font-medium">
-                          Κάντε κλικ για να προσθέσετε εικόνα
+                          Κάντε κλικ για να προσθέσετε εικόνες
                         </p>
                         <p className="text-sm">
-                          Υποστηρίζονται εικόνες (jpg, png, ...)
+                          Υποστηρίζονται εικόνες (jpg, png, ...), μπορείτε να επιλέξετε πολλές
                         </p>
                       </div>
                     )}
@@ -312,165 +337,154 @@ export default function AddProductPage() {
                   </p>
                 )}
 
-                {imagePreview && (
+                {imagePreviews.length > 0 && (
                   <div className="mt-3">
                     <button
                       type="button"
                       onClick={() => {
-                        setImageFile(null);
-                        setImagePreview(null);
+                        setImageFiles([]);
+                        setImagePreviews([]);
                       }}
                       className="px-3 py-1 text-sm rounded-md border border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-[var(--foreground)] hover:bg-[var(--background-tertiary)]"
                     >
-                      Αφαίρεση
+                      Αφαίρεση Όλων
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
-                    Όνομα
-                  </label>
-                  <input
-                    value={name}
-                    ref={nameRef}
-                    onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => handleEnterKey(e, "name")}
-                    className={`w-full px-5 py-3 rounded-xl bg-[var(--background-secondary)] border ${
-                      errors.name
-                        ? "border-[var(--error)]"
-                        : "border-[var(--border)]"
-                    } text-[var(--foreground)] focus:outline-none`}
-                    placeholder="π.χ. Ασύρματα Ακουστικά"
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-[var(--error)] mt-1">
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
-                    Τιμή (€)
-                  </label>
-                  <input
-                    value={price}
-                    ref={priceRef}
-                    onChange={(e) => setPrice(e.target.value)}
-                    onKeyDown={(e) => handleEnterKey(e, "price")}
-                    className={`w-full px-5 py-3 rounded-xl bg-[var(--background-secondary)] border ${
-                      errors.price
-                        ? "border-[var(--error)]"
-                        : "border-[var(--border)]"
-                    } text-[var(--foreground)] focus:outline-none`}
-                    placeholder="π.χ. 49.99"
-                    inputMode="decimal"
-                  />
-                  {errors.price && (
-                    <p className="text-sm text-[var(--error)] mt-1">
-                      {errors.price}
-                    </p>
-                  )}
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
-                    Περιγραφή
-                  </label>
-                  <textarea
-                    value={description}
-                    ref={descriptionRef}
-                    onChange={(e) => setDescription(e.target.value)}
-                    onKeyDown={(e) => handleEnterKey(e, "description")}
-                    rows={4}
-                    className="w-full px-5 py-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none"
-                    placeholder="Μια σύντομη περιγραφή του προϊόντος"
-                  />
-                  {errors.description && (
-                    <p className="text-sm text-[var(--error)] mt-1">
-                      {errors.description}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
-                    Κατηγορία
-                  </label>
-                  <select
-                    value={category}
-                    ref={categoryRef}
-                    onChange={(e) => setCategory(e.target.value)}
-                    onKeyDown={(e) => handleEnterKey(e, "category")}
-                    className={`w-full px-4 py-3 sm:py-3 rounded-lg bg-[var(--background-secondary)] border ${
-                      errors.category
-                        ? "border-[var(--error)]"
-                        : "border-[var(--border)]"
-                    } text-[var(--foreground)] focus:outline-none`}
-                  >
-                    <option value="">-- Επιλέξτε --</option>
-                    {(serverCategories.length
-                      ? serverCategories
-                      : Object.keys(sampleCategories)
-                    ).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {capitalizeDisplay(cat)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.category && (
-                    <p className="text-sm text-[var(--error)] mt-1">
-                      {errors.category}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
-                    Υποκατηγορία
-                  </label>
-                  <select
-                    value={subcategory}
-                    ref={subcategoryRef}
-                    onChange={(e) => setSubcategory(e.target.value)}
-                    onKeyDown={(e) => handleEnterKey(e, "subcategory")}
-                    className="w-full px-4 py-3 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none"
-                  >
-                    <option value="">-- Επιλέξτε --</option>
-                    {(serverSubcategories.length
-                      ? serverSubcategories
-                      : category && sampleCategories[category]
-                      ? sampleCategories[category]
-                      : []
-                    ).map((sub) => (
-                      <option key={sub} value={sub}>
-                        {capitalizeDisplay(sub)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.subcategory && (
-                    <p className="text-sm text-[var(--error)] mt-1">
-                      {errors.subcategory}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <><div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
+                      Όνομα
+                    </label>
+                    <input
+                      value={name}
+                      ref={nameRef}
+                      onChange={(e) => setName(e.target.value)}
+                      onKeyDown={(e) => handleEnterKey(e, "name")}
+                      className={`w-full px-5 py-3 rounded-xl bg-[var(--background-secondary)] border ${errors.name
+                          ? "border-[var(--error)]"
+                          : "border-[var(--border)]"} text-[var(--foreground)] focus:outline-none`}
+                      placeholder="π.χ. Σκουλαρίκι από ατσάλι" />
+                    {errors.name && (
+                      <p className="text-sm text-[var(--error)] mt-1">
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
+                      Τιμή (€)
+                    </label>
+                    <input
+                      value={price}
+                      ref={priceRef}
+                      onChange={(e) => setPrice(e.target.value)}
+                      onKeyDown={(e) => handleEnterKey(e, "price")}
+                      className={`w-full px-5 py-3 rounded-xl bg-[var(--background-secondary)] border ${errors.price
+                          ? "border-[var(--error)]"
+                          : "border-[var(--border)]"} text-[var(--foreground)] focus:outline-none`}
+                      placeholder="π.χ. 49.99"
+                      inputMode="decimal" />
+                    {errors.price && (
+                      <p className="text-sm text-[var(--error)] mt-1">
+                        {errors.price}
+                      </p>
+                    )}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
+                      Περιγραφή
+                    </label>
+                    <textarea
+                      value={description}
+                      ref={descriptionRef}
+                      onChange={(e) => setDescription(e.target.value)}
+                      onKeyDown={(e) => handleEnterKey(e, "description")}
+                      rows={4}
+                      className="w-full px-5 py-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none"
+                      placeholder="Μια σύντομη περιγραφή του προϊόντος" />
+                    {errors.description && (
+                      <p className="text-sm text-[var(--error)] mt-1">
+                        {errors.description}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
+                      Κατηγορία
+                    </label>
+                    <select
+                      value={category}
+                      ref={categoryRef}
+                      onChange={(e) => setCategory(e.target.value)}
+                      onKeyDown={(e) => handleEnterKey(e, "category")}
+                      className={`w-full px-4 py-3 sm:py-3 rounded-lg bg-[var(--background-secondary)] border ${errors.category
+                          ? "border-[var(--error)]"
+                          : "border-[var(--border)]"} text-[var(--foreground)] focus:outline-none`}
+                    >
+                      <option value="">-- Επιλέξτε --</option>
+                      {(serverCategories.length
+                        ? serverCategories
+                        : Object.keys(sampleCategories)
+                      ).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {capitalizeDisplay(cat)}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.category && (
+                      <p className="text-sm text-[var(--error)] mt-1">
+                        {errors.category}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">
+                      Υποκατηγορία
+                    </label>
+                    <select
+                      value={subcategory}
+                      ref={subcategoryRef}
+                      onChange={(e) => setSubcategory(e.target.value)}
+                      onKeyDown={(e) => handleEnterKey(e, "subcategory")}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none"
+                    >
+                      <option value="">-- Επιλέξτε --</option>
+                      {(serverSubcategories.length
+                        ? serverSubcategories
+                        : category && sampleCategories[category]
+                          ? sampleCategories[category]
+                          : []
+                      ).map((sub) => (
+                        <option key={sub} value={sub}>
+                          {capitalizeDisplay(sub)}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.subcategory && (
+                      <p className="text-sm text-[var(--error)] mt-1">
+                        {errors.subcategory}
+                      </p>
+                    )}
+                  </div>
+                </div><div className="flex flex-col items-center gap-3 mt-6 sm:flex-row">
+                    <Link
+                      href="/dashboard"
+                      className="w-full sm:w-auto text-center px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--foreground)] bg-[rgba(255,255,255,0.02)]"
+                    >
+                      Ακύρωση
+                    </Link>
 
-              <div className="flex flex-col items-center gap-3 mt-6 sm:flex-row">
-                <Link
-                  href="/dashboard"
-                  className="w-full sm:w-auto text-center px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--foreground)] bg-[rgba(255,255,255,0.02)]"
-                >
-                  Ακύρωση
-                </Link>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full sm:w-auto text-center px-6 py-3 bg-[var(--accent)] text-[var(--silver-light)] rounded-lg font-medium shadow disabled:opacity-60"
-                >
-                  {loading ? "Αποθήκευση..." : "Αποθήκευση Προϊόντος"}
-                </button>
-              </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full sm:w-auto text-center px-6 py-3 bg-[var(--accent)] text-[var(--silver-light)] rounded-lg font-medium shadow disabled:opacity-60"
+                    >
+                      {loading ? "Αποθήκευση..." : "Αποθήκευση Προϊόντος"}
+                    </button>
+                  </div></>
             </form>
 
             {/* Back to dashboard button below the container */}

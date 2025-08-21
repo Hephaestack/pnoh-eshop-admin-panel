@@ -212,26 +212,7 @@ function Sidebar({ isOpen, onClose, activeItem, setActiveItem }) {
           </nav>
 
           {/* User Profile */}
-          <div className="p-4 border-t border-[var(--border)]">
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-[var(--background-secondary)]">
-              <div className="w-10 h-10 bg-gradient-to-br from-[var(--silver)] to-[var(--silver-dark)] rounded-full flex items-center justify-center">
-                <span className="text-[var(--background)] font-semibold">
-                  A
-                </span>
-              </div>
-              <div className="flex-1">
-                <p className="text-[var(--foreground)] font-medium">
-                  Διαχειριστής
-                </p>
-                <p className="text-[var(--foreground-muted)] text-sm">
-                  admin@pnoh.com
-                </p>
-              </div>
-              <button className="p-2 rounded-md hover:bg-[var(--accent)] text-[var(--foreground-muted)]">
-                <Icons.Logout />
-              </button>
-            </div>
-          </div>
+          
         </div>
       </motion.aside>
     </>
